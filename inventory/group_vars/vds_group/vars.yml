@@ -1,0 +1,8 @@
+ssh_access_ip: "{{ vault_ssh_access_ip }}"
+ovpn_login: "{{ vault_ovpn_login }}"
+ovpn_password: "{{ vault_ovpn_password }}"
+ovpn_conf_dir: /etc/openvpn
+ovpn_server_ip: "{{ vault_ovpn_server_ip }}"
+ovpn_server_port: "11940"
+vds_ip: "{{ vault_vds_ip }}"
+subnet: "{{ vault_subnet }}"

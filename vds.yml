@@ -1,0 +1,7 @@
+- hosts: "{{ srv }}"
+  become: true
+  roles:
+    - { role: iptables, tags: ["iptables"]}
+    - { role: ovpn_client, tags: ["ovpn_client"]}
+    
+    

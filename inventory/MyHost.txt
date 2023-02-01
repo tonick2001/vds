@@ -1,0 +1,5 @@
+[docker_vm]
+docker-vm25 
+
+[vds_group]
+vds

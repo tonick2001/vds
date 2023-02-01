@@ -1,0 +1,35 @@
+- name: Create OVPN conf dir
+  ansible.builtin.file:
+    path: "/{{ ovpn_conf_dir }}"
+    owner: 'root'
+    group: root
+    mode: '0600'
+    state: directory
+
+- name: Copy cert and conf
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "{{ item.mode }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+  with_items:
+    - { src: 'templates/ca.crt', dest: '/{{ ovpn_conf_dir }}/client/ca.crt', mode: '0600', owner: 'root', group: root }
+    - { src: 'templates/test.conf', dest: '/{{ ovpn_conf_dir }}/client.conf', mode: '0600', owner: 'root', group: root }
+    - { src: 'templates/VdsServer.crt', dest: '/{{ ovpn_conf_dir }}/client/VdsServer.crt', mode: '0600', owner: 'root', group: root }
+    - { src: 'templates/VdsServer.key', dest: '/{{ ovpn_conf_dir }}/client/VdsServer.key', mode: '0600', owner: 'root', group: root }
+    - { src: 'templates/VdsServer.txt', dest: '/{{ ovpn_conf_dir }}/client/VdsServer.txt', mode: '0600', owner: 'root', group: root }
+    - { src: 'templates/openvpn', dest: '/etc/default/openvpn', mode: '0644', owner: 'root', group: root }
+
+- name: Install openvpn-client
+  ansible.builtin.apt:
+    name: openvpn
+    update_cache: true
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Systemctl enable openvpn@client.service
+  ansible.builtin.systemd:
+    name: openvpn@client.service
+    state: started
+    enabled: true

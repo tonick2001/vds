@@ -1,0 +1,77 @@
+- name: Ping
+  ansible.builtin.ping:
+  become: true
+
+- name: Install IPtables-persistent
+  ansible.builtin.apt:
+    name: iptables-persistent
+    update_cache: true
+    state: present
+  when: ansible_os_family == "Debian"
+  register: install_packages
+
+- name: Run the equivalent of "apt-get clean" as a separate step
+  ansible.builtin.apt:
+    clean: true
+
+- name: Print ansible_os_family
+  ansible.builtin.debug:
+    msg: "OS: {{ ansible_os_family }}"
+
+# show rules iptables --line-numbers -L -v -n
+- name: Ansible [Allow ESTABLISHED]
+  ansible.builtin.iptables:
+    chain: INPUT
+    match: conntrack
+    ctstate: ESTABLISHED,RELATED
+    jump: ACCEPT
+    comment: "Ansible [Allow ESTABLISHED]"
+  become: true
+  register: fw
+
+- name: Access ssh port 22
+  ansible.builtin.iptables:
+    chain: INPUT
+    protocol: tcp
+    source: "{{ ssh_access_ip }}"
+    destination_port: 22
+    jump: ACCEPT
+    comment: "Ansible [Allow ssh port]"
+  become: true
+
+- name: Allow icmp
+  ansible.builtin.iptables:
+    chain: INPUT
+    protocol: icmp
+    jump: ACCEPT
+    comment: "Ansible [Allow icmp]"
+  become: true
+
+- name: Drop tcp input ALL
+  ansible.builtin.iptables:
+    chain: INPUT
+    in_interface: ens3
+    jump: DROP
+    comment: "Ansible [Drop tcp input ALL]"
+  become: true
+
+- name: Modify the packet's source address to forward traffic back to firewall to forward on to the client
+  ansible.builtin.iptables:
+    chain: POSTROUTING
+    source: "{{ subnet }}"
+    jump: SNAT
+    out_interface: ens3
+    table: nat
+    to_source: "{{ vds_ip }}" # firewall IP
+  become: true
+
+- name: Save iptables
+  ansible.builtin.command: netfilter-persistent save
+
+- name: Enabled forwarding
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    sysctl_set: true
+    state: present
+    reload: true
